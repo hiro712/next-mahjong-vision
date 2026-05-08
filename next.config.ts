@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  // Cloudflare Pages + @cloudflare/next-on-pages でデプロイ
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

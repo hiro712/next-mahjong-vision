@@ -3,9 +3,8 @@ import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-// Cloudflare Workers (Edge) ランタイムを使用
-// Node.js API (Buffer等) は使用不可 → Web標準APIで代替
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 const SYSTEM_PROMPT = `あなたは麻雀牌の画像認識の専門家です。
 手牌の写真から、各牌の種類を正確に認識してください。
@@ -22,18 +21,6 @@ const SYSTEM_PROMPT = `あなたは麻雀牌の画像認識の専門家です。
 - suit別にまとめて出力してください（例: m234p567s234z11）
 - 認識できない牌は出力から除外し、confidence を下げてください
 - 赤ドラが含まれている場合は 0 で表現してください（例: 赤5筒=p0）`;
-
-// ArrayBuffer → base64 (Web標準APIのみ使用、Node.js の Buffer 不使用)
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  const chunkSize = 8192;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    const chunk = bytes.subarray(i, i + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-  return btoa(binary);
-}
 
 export async function POST(request: Request) {
   if (!process.env.OPENAI_API_KEY) {
@@ -62,7 +49,7 @@ export async function POST(request: Request) {
     }
 
     const buffer = await imageFile.arrayBuffer();
-    const base64 = arrayBufferToBase64(buffer);
+    const base64 = Buffer.from(buffer).toString("base64");
     const mimeType = imageFile.type || "image/jpeg";
 
     const result = await generateObject({
