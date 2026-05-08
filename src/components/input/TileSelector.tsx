@@ -57,10 +57,6 @@ export function TileSelector({
           // 三麻: 北をスキップ
           if (isSanma && section.suit === "z" && num === 4) continue;
           tiles.push({ suit: section.suit, num });
-          // 5の赤ドラ（字牌以外）
-          if (section.suit !== "z" && num === 5) {
-            tiles.push({ suit: section.suit, num: 5, isRed: true });
-          }
         }
 
         return (

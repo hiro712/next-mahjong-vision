@@ -49,6 +49,7 @@ export interface FuBreakdown {
   wait: FuDetail | null; // 待ち
   total: number; // 端数切り上げ後合計
   raw: number; // 切り上げ前合計
+  meldStrings: string[]; // hule_mianzi() の生文字列（鳴き再計算用）
 }
 
 export interface Yaku {

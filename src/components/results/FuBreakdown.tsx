@@ -6,6 +6,8 @@ import type { FuBreakdown as FuBreakdownType } from "@/types/mahjong";
 
 interface FuBreakdownProps {
   breakdown: FuBreakdownType;
+  openMeldIndices: Set<number>;
+  onToggleMeld: (index: number) => void;
 }
 
 function FuRow({
@@ -55,7 +57,11 @@ function FuRow({
   );
 }
 
-export function FuBreakdown({ breakdown }: FuBreakdownProps) {
+export function FuBreakdown({
+  breakdown,
+  openMeldIndices,
+  onToggleMeld,
+}: FuBreakdownProps) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -108,24 +114,43 @@ export function FuBreakdown({ breakdown }: FuBreakdownProps) {
           {breakdown.melds.length > 0 && (
             <div>
               <p className="text-xs text-neutral-400 pt-2 pb-1 border-t border-neutral-100">
-                面子
+                面子{" "}
+                <span className="text-neutral-300">
+                  （タップで鳴き切り替え）
+                </span>
               </p>
               {breakdown.melds.map((meld, i) => (
-                <FuRow
-                  key={i}
-                  label={meld.label}
-                  tiles={meld.tiles}
-                  fu={meld.fu}
-                  note={meld.note}
-                />
-              ))}
-              {breakdown.melds.every((m) => m.fu === 0) && (
-                <div className="flex items-center gap-2 py-1">
-                  <span className="text-xs text-neutral-400">
-                    全て順子（0符）
+                <div key={i} className="flex items-center gap-2 py-1.5">
+                  {/* 牌表示 */}
+                  <div className="flex gap-0.5 flex-shrink-0 w-28">
+                    {meld.tiles.map((t, ti) => (
+                      <TileSvg key={ti} tile={t} size="sm" />
+                    ))}
+                  </div>
+                  {/* 説明 */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-neutral-500 truncate">
+                      {meld.note || meld.label}
+                    </p>
+                  </div>
+                  {/* 符数 */}
+                  <span className="text-sm font-mono font-medium text-neutral-900 flex-shrink-0 w-12 text-right">
+                    {meld.fu > 0 ? `+${meld.fu}符` : "0符"}
                   </span>
+                  {/* 鳴きトグル */}
+                  <button
+                    type="button"
+                    onClick={() => onToggleMeld(i)}
+                    className={`flex-shrink-0 px-2 py-1 rounded-md text-xs font-medium border transition-colors ${
+                      openMeldIndices.has(i)
+                        ? "bg-neutral-900 text-white border-neutral-900"
+                        : "bg-white text-neutral-500 border-neutral-200 hover:border-neutral-400"
+                    }`}
+                  >
+                    {openMeldIndices.has(i) ? "鳴き" : "門前"}
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
           )}
 

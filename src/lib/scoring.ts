@@ -260,14 +260,12 @@ export function calculateScore(
     }));
 
     // ドラ各種を追加
-    const redCount = handTiles.filter((t) => t.isRed).length;
     const uraHan =
       settings.riichi || settings.doubleRiichi ? settings.uraDoraCount : 0;
 
     const doraYaku: Yaku[] = [];
     if (settings.doraCount > 0)
       doraYaku.push({ name: "ドラ", han: settings.doraCount });
-    if (redCount > 0) doraYaku.push({ name: "赤ドラ", han: redCount });
     if (uraHan > 0) doraYaku.push({ name: "裏ドラ", han: uraHan });
     if (settings.kitaCount > 0)
       doraYaku.push({ name: "抜きドラ（北）", han: settings.kitaCount });
@@ -281,8 +279,7 @@ export function calculateScore(
       ? 0
       : ((result.fanshu as number | undefined) ??
         baseYaku.reduce((s, y) => s + y.han, 0));
-    const extraHan =
-      settings.doraCount + redCount + uraHan + settings.kitaCount;
+    const extraHan = settings.doraCount + uraHan + settings.kitaCount;
     const totalHan = isYakumanHand ? 0 : baseHan + extraHan;
     const totalFu = (result.fu as number | undefined) ?? 30;
 
@@ -347,6 +344,7 @@ function buildFuBreakdown(
   const melds: FuDetail[] = [];
   let pairDetail: FuDetail | null = null;
   let waitDetail: FuDetail | null = null;
+  const rawMeldStrings: string[] = [];
 
   try {
     const mianziList: string[] =
@@ -360,9 +358,9 @@ function buildFuBreakdown(
         if (tile.suit === "z") {
           const wind1 = windToTileNum(settings.roundWind);
           const wind2 = windToTileNum(settings.seatWind);
-          if (tile.num >= 5) pairFu = 2; // 三元牌（5z=白, 6z=發, 7z=中）
-          if (tile.num === wind1) pairFu += 2; // 場風
-          if (tile.num === wind2) pairFu += 2; // 自風
+          if (tile.num >= 5) pairFu = 2;
+          if (tile.num === wind1) pairFu += 2;
+          if (tile.num === wind2) pairFu += 2;
         }
         pairDetail = {
           label: "雀頭",
@@ -377,6 +375,8 @@ function buildFuBreakdown(
           fu: analyzed.fu,
           note: analyzed.note,
         });
+        // ! を除いた生文字列を保存（鳴き再計算用）
+        rawMeldStrings.push(meld.replace(/!/g, ""));
       }
     }
 
@@ -413,5 +413,169 @@ function buildFuBreakdown(
     wait: waitDetail,
     total,
     raw,
+    meldStrings: rawMeldStrings,
   };
+}
+
+// 面子文字列 → open形式に変換（副露マーカー付き）
+function meldToOpenString(meld: string): string {
+  const clean = meld.replace(/[+\-=!]/g, "");
+  const tiles = parseMpsz(clean);
+  if (tiles.length < 3) return clean;
+
+  const isTriplet = tiles.every(
+    (t) => t.suit === tiles[0].suit && t.num === tiles[0].num,
+  );
+
+  const suit = tiles[0].suit;
+  if (isTriplet) {
+    // ポン: suit + n + n + n + "+"
+    const ns = tiles.map((t) => (t.isRed ? "0" : `${t.num}`)).join("");
+    return `${suit}${ns}+`;
+  }
+  // チー: suit + n1 + "-" + n2n3 （最初の牌を上家から鳴いた扱い）
+  const ns = tiles.map((t) => (t.isRed ? "0" : `${t.num}`));
+  return `${suit}${ns[0]}-${ns[1]}${ns[2]}`;
+}
+
+// 鳴いた面子の牌をhand配列から除去
+function removeMeldTiles(handTiles: Tile[], meld: string): Tile[] {
+  const remaining = [...handTiles];
+  const meldTiles = parseMpsz(meld.replace(/[+\-=!]/g, ""));
+  for (const tile of meldTiles) {
+    const idx = remaining.findIndex(
+      (t) => t.suit === tile.suit && t.num === tile.num,
+    );
+    if (idx >= 0) remaining.splice(idx, 1);
+  }
+  return remaining;
+}
+
+// 鳴きトグル後の再計算
+export function calculateScoreWithOpenMelds(
+  handTiles: Tile[],
+  winTile: Tile,
+  settings: GameSettings,
+  meldStrings: string[], // fuBreakdown.meldStrings
+  openIndices: Set<number>, // 鳴いた面子のインデックス
+): ScoreResult | null {
+  if (openIndices.size === 0) return null; // 変化なし
+
+  try {
+    // 鳴いた面子をhandから取り除き、副露として追加
+    let remaining = [...handTiles];
+    const openMelds: string[] = [];
+
+    for (const idx of openIndices) {
+      const raw = meldStrings[idx];
+      if (!raw) continue;
+      remaining = removeMeldTiles(remaining, raw);
+      openMelds.push(meldToOpenString(raw));
+    }
+
+    // shoupai文字列: closedMPSZ + ,openMeld1 + ,openMeld2 + ...
+    const closedMpsz = tilesToMpsz(remaining);
+    const fullStr = closedMpsz + openMelds.map((m) => `,${m}`).join("");
+    const shoupai = Majiang.Shoupai.fromString(fullStr);
+
+    // 和了牌の設定
+    const tileNum = winTile.isRed ? "0" : `${winTile.num}`;
+    const tileStr = `${winTile.suit}${tileNum}`;
+    let rongpai: string | null = null;
+    if (settings.winType === "ron") {
+      rongpai = `${tileStr}+`;
+    } else {
+      shoupai.zimo(tileStr);
+    }
+
+    const rule = Majiang.rule();
+    const param = {
+      rule,
+      zhuangfeng: windToParamNum(settings.roundWind),
+      menfeng: windToParamNum(settings.seatWind),
+      hupai: {
+        lizhi: 0, // 鳴きがあれば立直不可
+        yifa: false,
+        qianggang: settings.chankan,
+        lingshang: settings.rinshan,
+        haidi:
+          settings.winType === "tsumo"
+            ? settings.haitei
+              ? 1
+              : 0
+            : settings.houtei
+              ? 2
+              : 0,
+        tianhu: 0,
+      },
+      baopai: [],
+      fubaopai: null,
+      jicun: { changbang: 0, lizhibang: 0 },
+    };
+
+    const result: HuleResult = Majiang.Util.hule(shoupai, rongpai, param);
+    if (!result || !result.hupai || result.hupai.length === 0) return null;
+
+    const baseYaku: Yaku[] = result.hupai.map((h) => ({
+      name: h.name,
+      han: typeof h.fanshu === "string" ? 0 : (h.fanshu as number),
+      isYakuman: typeof h.fanshu === "string",
+    }));
+
+    const doraYaku: Yaku[] = [];
+    if (settings.doraCount > 0)
+      doraYaku.push({ name: "ドラ", han: settings.doraCount });
+    if (settings.kitaCount > 0)
+      doraYaku.push({ name: "抜きドラ（北）", han: settings.kitaCount });
+
+    const yaku = [...baseYaku, ...doraYaku];
+    const isYakumanHand = (result.damanguan as number | undefined) != null;
+    const baseHan: number = isYakumanHand
+      ? 0
+      : ((result.fanshu as number | undefined) ??
+        baseYaku.reduce((s, y) => s + y.han, 0));
+    const extraHan = settings.doraCount + settings.kitaCount;
+    const totalHan = isYakumanHand ? 0 : baseHan + extraHan;
+    const totalFu = (result.fu as number | undefined) ?? 30;
+    const category = getCategory(
+      totalHan,
+      totalFu,
+      result.damanguan as number | undefined,
+    );
+    const fuBreakdown = buildFuBreakdown(shoupai, rongpai, settings, result);
+
+    const isDealer = settings.seatWind === "east";
+    const payInfo = calcPayments(
+      totalHan,
+      totalFu,
+      isDealer,
+      settings.winType,
+      settings.playerCount,
+      result.damanguan as number | undefined,
+    );
+
+    const payments: ScoreResult["payments"] = {};
+    if (settings.winType === "ron" && payInfo.ron) {
+      payments.ron = { payer: "放銃者", amount: payInfo.ron };
+    } else if (settings.winType === "tsumo") {
+      payments.tsumo = {
+        dealer: payInfo.tsumoDealerPays ?? 0,
+        nonDealer: payInfo.tsumoNonDealerPays ?? 0,
+      };
+    }
+
+    return {
+      yaku,
+      fu: totalFu,
+      han: totalHan,
+      fuBreakdown,
+      category,
+      gain: payInfo.gain,
+      payments,
+      rawResult: result,
+    };
+  } catch (e) {
+    console.error("open meld scoring error:", e);
+    return null;
+  }
 }

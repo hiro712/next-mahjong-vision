@@ -340,9 +340,6 @@ export function GameSettingsPanel({ settings, onChange }: GameSettingsProps) {
             />
           )}
         </div>
-        <p className="text-xs text-neutral-400">
-          ※ 赤ドラは手牌に赤五を選ぶと自動カウント
-        </p>
       </div>
     </div>
   );

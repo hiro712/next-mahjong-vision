@@ -8,7 +8,7 @@ import { FuBreakdown } from "@/components/results/FuBreakdown";
 import { ScoreDisplay } from "@/components/results/ScoreDisplay";
 import { YakuList } from "@/components/results/YakuList";
 import { GameSettingsPanel } from "@/components/settings/GameSettings";
-import { calculateScore } from "@/lib/scoring";
+import { calculateScore, calculateScoreWithOpenMelds } from "@/lib/scoring";
 import type { GameSettings, ScoreResult, Tile } from "@/types/mahjong";
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -35,6 +35,10 @@ export default function Home() {
   const [winTile, setWinTile] = useState<Tile | null>(null);
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const [result, setResult] = useState<ScoreResult | null>(null);
+  const [displayResult, setDisplayResult] = useState<ScoreResult | null>(null);
+  const [openMeldIndices, setOpenMeldIndices] = useState<Set<number>>(
+    new Set(),
+  );
   const [error, setError] = useState<string | null>(null);
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [calculating, setCalculating] = useState(false);
@@ -86,8 +90,40 @@ export default function Home() {
     setHandTiles([]);
     setWinTile(null);
     setResult(null);
+    setDisplayResult(null);
+    setOpenMeldIndices(new Set());
     setError(null);
   }, []);
+
+  const handleToggleMeld = useCallback(
+    (index: number) => {
+      if (!result || !winTile) return;
+      setOpenMeldIndices((prev) => {
+        const next = new Set(prev);
+        if (next.has(index)) {
+          next.delete(index);
+        } else {
+          next.add(index);
+        }
+        // 鳴きが0なら元の結果に戻す
+        if (next.size === 0) {
+          setDisplayResult(result);
+          return next;
+        }
+        // 再計算
+        const recalc = calculateScoreWithOpenMelds(
+          handTiles,
+          winTile,
+          settings,
+          result.fuBreakdown.meldStrings,
+          next,
+        );
+        setDisplayResult(recalc ?? result);
+        return next;
+      });
+    },
+    [result, winTile, handTiles, settings],
+  );
 
   const handleCalculate = useCallback(() => {
     setError(null);
@@ -112,6 +148,8 @@ export default function Home() {
           setError("あがれません。手牌と設定を確認してください。");
         } else {
           setResult(calcResult);
+          setDisplayResult(calcResult);
+          setOpenMeldIndices(new Set());
           setTimeout(() => {
             document
               .getElementById("result-section")
@@ -248,7 +286,7 @@ export default function Home() {
         )}
 
         {/* 結果 */}
-        {result && (
+        {displayResult && (
           <section id="result-section" className="space-y-3 pb-8">
             <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide pt-2">
               計算結果
@@ -256,20 +294,24 @@ export default function Home() {
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-white">
               <YakuList
-                yaku={result.yaku}
-                totalHan={result.han}
-                totalFu={result.fu}
-                category={result.category}
+                yaku={displayResult.yaku}
+                totalHan={displayResult.han}
+                totalFu={displayResult.fu}
+                category={displayResult.category}
               />
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-white">
-              <FuBreakdown breakdown={result.fuBreakdown} />
+              <FuBreakdown
+                breakdown={displayResult.fuBreakdown}
+                openMeldIndices={openMeldIndices}
+                onToggleMeld={handleToggleMeld}
+              />
             </div>
 
             <div className="border border-neutral-200 rounded-xl p-4 bg-white">
               <ScoreDisplay
-                result={result}
+                result={displayResult}
                 playerCount={settings.playerCount}
                 seatWind={settings.seatWind}
                 winType={settings.winType}

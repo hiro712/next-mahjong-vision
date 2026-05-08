@@ -27,7 +27,6 @@ export function TileSvg({
   dim = false,
 }: TileSvgProps) {
   const { w, h } = SIZE_MAP[size];
-  const isRed = tile.isRed ?? false;
 
   return (
     <div
@@ -35,7 +34,6 @@ export function TileSvg({
         width: w,
         height: h,
         flexShrink: 0,
-        position: "relative",
         display: "inline-block",
         opacity: dim ? 0.3 : 1,
         borderRadius: 3,
@@ -45,9 +43,8 @@ export function TileSvg({
           ? "drop-shadow(0 2px 6px rgba(0,0,0,0.35))"
           : "drop-shadow(0 1px 2px rgba(0,0,0,0.12))",
       }}
-      aria-label={`${tile.num}${tile.suit}${isRed ? "r" : ""}`}
+      aria-label={`${tile.num}${tile.suit}`}
     >
-      {/* 牌画像 */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={tileImagePath(tile)}
@@ -62,27 +59,6 @@ export function TileSvg({
           borderRadius: 3,
         }}
       />
-
-      {/* 赤ドラバッジ */}
-      {isRed && (
-        <span
-          style={{
-            position: "absolute",
-            bottom: 1,
-            right: 1,
-            background: "#dc2626",
-            color: "white",
-            fontSize: size === "sm" ? 6 : size === "md" ? 7 : 8,
-            fontWeight: 700,
-            lineHeight: 1,
-            padding: "1px 2px",
-            borderRadius: 2,
-            pointerEvents: "none",
-          }}
-        >
-          赤
-        </span>
-      )}
     </div>
   );
 }
