@@ -170,7 +170,7 @@ export default function Home() {
     <main className="min-h-screen bg-white">
       {/* ヘッダー */}
       <header className="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-neutral-200">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <h1 className="text-base font-bold text-neutral-900 tracking-tight">
             麻雀ビジョン
           </h1>
@@ -184,141 +184,150 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        {/* 手牌入力 */}
-        <section className="space-y-3">
-          <HandDisplay
-            tiles={handTiles}
-            winTile={winTile}
-            onRemoveTile={handleRemoveTile}
-            onRemoveWinTile={handleRemoveWinTile}
-            isRon={isRon}
-          />
-
-          <div className="grid grid-cols-2 gap-2">
-            <PhotoUpload onRecognized={handlePhotoRecognized} />
-            <button
-              type="button"
-              onClick={() => setSelectorOpen((v) => !v)}
-              className="flex items-center justify-center gap-2 px-4 py-3 border border-neutral-200 rounded-lg text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 transition-colors"
-            >
-              <svg
-                className="w-4 h-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
-                />
-              </svg>
-              {selectorOpen ? "閉じる" : "手動で選ぶ"}
-            </button>
-          </div>
-
-          {selectorOpen && (
-            <div className="border border-neutral-200 rounded-xl p-4 bg-neutral-50">
-              <TileSelector
-                handTiles={handTiles}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="lg:grid lg:grid-cols-[480px_1fr] lg:gap-8 lg:items-start">
+          {/* 左カラム: 手牌入力 + タイルセレクター */}
+          <div className="space-y-4 lg:sticky lg:top-20">
+            <section className="space-y-3">
+              <HandDisplay
+                tiles={handTiles}
                 winTile={winTile}
-                onSelectTile={handleSelectTile}
-                isSanma={isSanma}
+                onRemoveTile={handleRemoveTile}
+                onRemoveWinTile={handleRemoveWinTile}
                 isRon={isRon}
               />
-            </div>
-          )}
-        </section>
 
-        <div className="border-t border-neutral-100" />
+              <div className="grid grid-cols-2 gap-2">
+                <PhotoUpload onRecognized={handlePhotoRecognized} />
+                {/* モバイルのみトグルボタン */}
+                <button
+                  type="button"
+                  onClick={() => setSelectorOpen((v) => !v)}
+                  className="lg:hidden flex items-center justify-center gap-2 px-4 py-3 border border-neutral-200 rounded-lg text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 transition-colors"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    aria-hidden
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+                    />
+                  </svg>
+                  {selectorOpen ? "閉じる" : "手動で選ぶ"}
+                </button>
+              </div>
 
-        {/* ゲーム設定 */}
-        <section>
-          <GameSettingsPanel
-            settings={settings}
-            onChange={handleSettingsChange}
-          />
-        </section>
-
-        {/* 計算ボタン */}
-        <button
-          type="button"
-          onClick={handleCalculate}
-          disabled={!canCalculate || calculating}
-          className="w-full py-4 bg-neutral-900 text-white font-semibold text-base rounded-xl hover:bg-neutral-800 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {calculating ? (
-            <>
-              <svg
-                className="animate-spin w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden
+              {/* モバイル: トグル制御、デスクトップ: 常時表示 */}
+              <div
+                className={`border border-neutral-200 rounded-xl p-4 bg-neutral-50 ${selectorOpen ? "block" : "hidden"} lg:block`}
               >
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="rgba(255,255,255,0.3)"
-                  strokeWidth="3"
+                <TileSelector
+                  handTiles={handTiles}
+                  winTile={winTile}
+                  onSelectTile={handleSelectTile}
+                  isSanma={isSanma}
+                  isRon={isRon}
                 />
-                <path
-                  d="M12 2a10 10 0 0 1 10 10"
-                  stroke="white"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-              計算中...
-            </>
-          ) : (
-            "計　算　する"
-          )}
-        </button>
-
-        {error && (
-          <div className="bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-3">
-            <p className="text-sm text-neutral-700">{error}</p>
+              </div>
+            </section>
           </div>
-        )}
 
-        {/* 結果 */}
-        {displayResult && (
-          <section id="result-section" className="space-y-3 pb-8">
-            <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide pt-2">
-              計算結果
-            </p>
+          {/* 右カラム: 設定 + 計算 + 結果 */}
+          <div className="space-y-6 mt-6 lg:mt-0">
+            <div className="border-t border-neutral-100 lg:hidden" />
 
-            <div className="border border-neutral-200 rounded-xl p-4 bg-white">
-              <YakuList
-                yaku={displayResult.yaku}
-                totalHan={displayResult.han}
-                totalFu={displayResult.fu}
-                category={displayResult.category}
+            {/* ゲーム設定 */}
+            <section>
+              <GameSettingsPanel
+                settings={settings}
+                onChange={handleSettingsChange}
               />
-            </div>
+            </section>
 
-            <div className="border border-neutral-200 rounded-xl p-4 bg-white">
-              <FuBreakdown
-                breakdown={displayResult.fuBreakdown}
-                openMeldIndices={openMeldIndices}
-                onToggleMeld={handleToggleMeld}
-              />
-            </div>
+            {/* 計算ボタン */}
+            <button
+              type="button"
+              onClick={handleCalculate}
+              disabled={!canCalculate || calculating}
+              className="w-full py-4 bg-neutral-900 text-white font-semibold text-base rounded-xl hover:bg-neutral-800 active:scale-[0.99] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {calculating ? (
+                <>
+                  <svg
+                    className="animate-spin w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="rgba(255,255,255,0.3)"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M12 2a10 10 0 0 1 10 10"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  計算中...
+                </>
+              ) : (
+                "計　算　する"
+              )}
+            </button>
 
-            <div className="border border-neutral-200 rounded-xl p-4 bg-white">
-              <ScoreDisplay
-                result={displayResult}
-                playerCount={settings.playerCount}
-                seatWind={settings.seatWind}
-                winType={settings.winType}
-              />
-            </div>
-          </section>
-        )}
+            {error && (
+              <div className="bg-neutral-50 border border-neutral-200 rounded-lg px-4 py-3">
+                <p className="text-sm text-neutral-700">{error}</p>
+              </div>
+            )}
+
+            {/* 結果 */}
+            {displayResult && (
+              <section id="result-section" className="space-y-3 pb-8">
+                <p className="text-xs font-medium text-neutral-400 uppercase tracking-wide pt-2">
+                  計算結果
+                </p>
+
+                <div className="border border-neutral-200 rounded-xl p-4 bg-white">
+                  <YakuList
+                    yaku={displayResult.yaku}
+                    totalHan={displayResult.han}
+                    totalFu={displayResult.fu}
+                    category={displayResult.category}
+                  />
+                </div>
+
+                <div className="border border-neutral-200 rounded-xl p-4 bg-white">
+                  <FuBreakdown
+                    breakdown={displayResult.fuBreakdown}
+                    openMeldIndices={openMeldIndices}
+                    onToggleMeld={handleToggleMeld}
+                  />
+                </div>
+
+                <div className="border border-neutral-200 rounded-xl p-4 bg-white">
+                  <ScoreDisplay
+                    result={displayResult}
+                    playerCount={settings.playerCount}
+                    seatWind={settings.seatWind}
+                    winType={settings.winType}
+                  />
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
